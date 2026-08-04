@@ -1,2 +1,0 @@
-/usr/bin/ar qc libPhysicsEngine.a CMakeFiles/PhysicsEngine.dir/src/world/world.cpp.o CMakeFiles/PhysicsEngine.dir/src/particle/particle.cpp.o CMakeFiles/PhysicsEngine.dir/src/joint/joint.cpp.o CMakeFiles/PhysicsEngine.dir/src/solver/solver.cpp.o CMakeFiles/PhysicsEngine.dir/src/particle/vector.cpp.o
-/usr/bin/ranlib libPhysicsEngine.a

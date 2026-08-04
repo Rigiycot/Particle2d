@@ -1,4 +1,6 @@
-#include <particle/particle.hpp>
+#include "particle/particle.hpp"
+
+#include <vector>
 
 class Shape
 {
