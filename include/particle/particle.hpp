@@ -1,4 +1,10 @@
+#pragma once
+
 #include "particle/vector.hpp"
+
+#include <cstdint>
+
+using ParticleID = uint8_t;
 
 struct Particle 
 {
@@ -7,3 +13,5 @@ struct Particle
 
   float inverseMass;
 };
+
+
