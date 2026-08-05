@@ -1,0 +1,57 @@
+CRL-1 1.0
+
+Custom Rigicot License
+
+Copyright (c) 2026 Rigiycot
+
+Permission is granted to use, copy, modify, merge, publish,
+distribute and sublicense this software.
+
+1. Usage
+
+This software may be used for:
+- personal projects;
+- educational projects;
+- commercial projects.
+
+Using this software does not require disclosure of the
+source code of projects that use it.
+
+2. Modification
+
+Modified versions of this software are permitted.
+
+Modified versions may be distributed under a different
+license.
+
+Publishing source code changes is not required.
+
+3. Redistribution
+
+When redistributing this software or a modified version:
+
+- the original author and project must be credited;
+- the original source must be referenced;
+- the modified version must not be presented as the official
+  version of the original project.
+
+4. Project Identity
+
+This license does not grant rights to use the original
+project name, trademarks, logos or official identity.
+
+Modified versions should use a different name unless
+permission is granted by the original author.
+
+5. Derivative Projects
+
+Projects that use this software as a dependency are not
+required to use this license.
+
+This license applies only to the software distributed under
+CRL-1 1.0.
+
+6. Warranty
+
+This software is provided "AS IS", without warranty of any
+kind.

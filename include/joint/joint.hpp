@@ -1,25 +1,21 @@
 #pragma once
 
-#include "particle/particle.hpp"
-
-#include <cstdint>
-
-using JointID = uint8_t;
+#include "types.hpp"
 
 struct Joint
 {
-
   ParticleID a;
   ParticleID b;
 
   float length;
+};
 
-  enum Type 
-  {
-    Dynamic,
-    Static,
-    Spring
-  };
-
-  Type jointType;
+struct AngleJoint
+{
+  ParticleID a;
+  ParticleID b;
+  ParticleID c;
+  
+  float minAngle;
+  float maxAngle;
 };
