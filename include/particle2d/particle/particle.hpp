@@ -1,6 +1,6 @@
 #pragma once
 
-#include "particle/vector.hpp"
+#include "particle2d/vector.hpp"
 
 struct Particle 
 {

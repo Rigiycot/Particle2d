@@ -1,4 +1,5 @@
-#include "particle/vector.hpp"
+#include "particle2d/vector.hpp"
+
 #include <cmath>
 
 Vec2::Vec2(const float x, const float y)
@@ -27,7 +28,7 @@ const {
 
 Vec2 Vec2::operator+(const Vec2& other)
 const {
-  return {this->x + other.y, this->y + other.y};
+  return {this->x + other.x, this->y + other.y};
 }
 
 Vec2 Vec2::operator-(const Vec2& other)

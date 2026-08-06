@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.hpp"
+#include "particle2d/types.hpp"
 
 #include <array>
 #include <cstddef>

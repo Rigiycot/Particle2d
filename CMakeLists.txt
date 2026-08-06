@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(PhysicsEngine)
+project(Particle2d)
 
-add_library(PhysicsEngine 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_library(Particle2d 
   src/world/world.cpp
   src/particle/particle.cpp 
   src/joint/joint.cpp 
@@ -10,9 +12,9 @@ add_library(PhysicsEngine
   src/particle/vector.cpp
 )
 
-target_compile_features(PhysicsEngine PUBLIC cxx_std_20)
+target_compile_features(Particle2d PUBLIC cxx_std_20)
 
-target_include_directories( PhysicsEngine
+target_include_directories( Particle2d
   PUBLIC include
 )
 
