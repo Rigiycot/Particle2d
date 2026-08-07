@@ -10,7 +10,7 @@ struct AngleGrad
 
   AngleGrad() = default;
   AngleGrad(float angle);
-  AngleGrad(const AngleRad angle);
+  AngleGrad(const AngleRad& angle);
 };
 
 struct AngleRad
@@ -21,7 +21,7 @@ struct AngleRad
 
   AngleRad() = default;
   AngleRad(float angle);
-  AngleRad(const AngleGrad angle);
+  AngleRad(const AngleGrad& angle);
 };
 
 
@@ -56,8 +56,8 @@ struct Vec2
   bool equal(const Vec2& other, float epsilon) const;
   bool nequal(const Vec2& other, float epsilon) const;
 
-  Vec2 rotate(const AngleGrad angle) const;
-  Vec2 rotate(const AngleRad  angle) const;
+  Vec2 rotate(const AngleGrad& angle) const;
+  Vec2 rotate(const AngleRad&  angle) const;
 };
 
 float dot(const Vec2& a, const Vec2& b);
@@ -76,10 +76,10 @@ struct Edge
   float length() const;
   float lengthSquared() const;
 
-  Edge rotate(const AngleGrad angle) const;
-  Edge rotate(const AngleRad  angle) const;
-  Edge rotate(const Vec2& pivot, const AngleGrad angle) const;
-  Edge rotate(const Vec2& pivot, const AngleRad  angle) const;
+  Edge rotate(const AngleGrad& angle) const;
+  Edge rotate(const AngleRad&  angle) const;
+  Edge rotate(const Vec2& pivot, const AngleGrad& angle) const;
+  Edge rotate(const Vec2& pivot, const AngleRad&  angle) const;
   
   Vec2 center() const;
 };

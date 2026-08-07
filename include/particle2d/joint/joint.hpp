@@ -1,6 +1,7 @@
 #pragma once
 
 #include "particle2d/types.hpp"
+#include "particle2d/vector.hpp"
 
 struct Joint
 {
@@ -17,8 +18,8 @@ struct AngleJoint
   ParticleID b;
   ParticleID c;
   
-  float minAngle;
-  float maxAngle;
+  AngleGrad minAngle;
+  AngleGrad maxAngle;
 
   float shiftness;
 };

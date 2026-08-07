@@ -6,7 +6,7 @@ AngleGrad::AngleGrad(float angle)
   : grad(angle)
 {}
 
-AngleGrad::AngleGrad(const AngleRad angle)
+AngleGrad::AngleGrad(const AngleRad& angle)
   : grad(angle.toGrad().grad)
 {}
 
@@ -14,7 +14,7 @@ AngleRad::AngleRad(float angle)
   : rad(angle)
 {}
 
-AngleRad::AngleRad(const AngleGrad angle)
+AngleRad::AngleRad(const AngleGrad& angle)
   : rad(angle.toRad().rad)
 {}
 
@@ -118,7 +118,7 @@ const {
   return (*this - other).lengthSquared() > epsilon * epsilon;
 }
 
-Vec2 Vec2::rotate(const AngleRad  angle)
+Vec2 Vec2::rotate(const AngleRad&  angle)
 const {
   return {
     this->x * cosf(angle.rad) - this->y * sinf(angle.rad),
@@ -126,7 +126,7 @@ const {
   };
 }
 
-Vec2 Vec2::rotate(const AngleGrad angle)
+Vec2 Vec2::rotate(const AngleGrad& angle)
 const {
   return this->rotate(angle.toRad());
 }
@@ -141,7 +141,7 @@ Edge::Edge(const Edge& other)
   this->b = other.b;
 }
 
-Edge Edge::rotate(const AngleRad angle)
+Edge Edge::rotate(const AngleRad& angle)
 const {
   return {
     this->a,
@@ -149,13 +149,13 @@ const {
   };
 }
 
-Edge Edge::rotate(const AngleGrad angle)
+Edge Edge::rotate(const AngleGrad& angle)
 const {
   AngleRad angleRad = angle.toRad();
   return this->rotate(angleRad);
 }
 
-Edge Edge::rotate(const Vec2& pivot, const AngleGrad angle)
+Edge Edge::rotate(const Vec2& pivot, const AngleGrad& angle)
 const {
   return {
     pivot + (this->a - pivot).rotate(angle),

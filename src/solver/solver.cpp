@@ -65,9 +65,14 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
     Vec2 ab = a.pos - b.pos;
     Vec2 bc = c.pos - b.pos;
 
-    float angle = atan2f(cross(ab, bc), dot(ab, bc)) * (M_PI / 180);
+    AngleRad angle = AngleRad(atan2f(cross(ab, bc), dot(ab, bc)) * (M_PI / 180));
 
-    ab = ab.rotate(AngleRad(angle));
-    bc = bc.rotate(AngleRad(angle));
+    ab = ab.rotate(angle);
+    bc = bc.rotate(angle);
+
+    if (angle.rad < AngleRad(anglej.minAngle).rad)
+    {
+
+    }
   }
 }
