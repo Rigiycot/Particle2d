@@ -8,6 +8,7 @@ struct Joint
   ParticleID b;
 
   float length;
+  float shiftness;
 };
 
 struct AngleJoint
@@ -18,4 +19,6 @@ struct AngleJoint
   
   float minAngle;
   float maxAngle;
+
+  float shiftness;
 };

@@ -24,6 +24,8 @@ class World
     void addVelocity(ParticleID id, const Vec2& velocity, float dt);
     void dampVelocity(ParticleID id, float amount);
 
+    Vec2 rotate(ParticleID p, float angle);
+
     Particle&   getParticle(ParticleID id);
     Joint&      getJoint(JointID id);
     AngleJoint& getAngleJoint(AngleJointID id);

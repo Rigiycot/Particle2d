@@ -33,6 +33,7 @@ Particle& World::getParticle(ParticleID id)
 {
   return particles.at(particleIdxToVec.at(id));
 }
+
 Joint& World::getJoint(JointID id)
 {
   return joints.at(jointIdxToVec.at(id));
