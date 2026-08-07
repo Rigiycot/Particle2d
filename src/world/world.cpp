@@ -18,12 +18,21 @@ void World::addVelocity(ParticleID id, const Vec2& velocity, float dt)
   prt.prevPos -= velocity * dt;
 }
 
+void World::dampVelocity(ParticleID id, float amount)
+{
+  Particle& prt = this->getParticle(id);
+
+  Vec2 velocity = prt.pos - prt.prevPos;
+  velocity *= amount;
+
+  prt.prevPos = prt.pos - velocity;
+}
+
 
 Particle& World::getParticle(ParticleID id)
 {
   return particles.at(particleIdxToVec.at(id));
 }
-
 Joint& World::getJoint(JointID id)
 {
   return joints.at(jointIdxToVec.at(id));

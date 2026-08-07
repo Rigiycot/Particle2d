@@ -22,6 +22,7 @@ class World
     ShapeID    createShape(std::unique_ptr<Shape>& shp);
 
     void addVelocity(ParticleID id, const Vec2& velocity, float dt);
+    void dampVelocity(ParticleID id, float amount);
 
     Particle&   getParticle(ParticleID id);
     Joint&      getJoint(JointID id);
