@@ -27,6 +27,14 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
     Particle& a = world.getParticle(joint.a);
     Particle& b = world.getParticle(joint.b);
 
+    float wA = a.inverseMass;
+    float wB = b.inverseMass;
+
+    float sum = wA + wB;
+
+    if (sum == 0.0f)
+      continue;
+
     float k = powf(joint.shiftness, 1.0f / iterations);
     
     Vec2 delta = a.pos - b.pos;
@@ -40,18 +48,10 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
 
     float error = dist - joint.length;
 
-    float w1 = a.inverseMass;
-    float w2 = b.inverseMass;
-
-    float sum = w1 + w2;
-
-    if (sum == 0.0f)
-      continue;
-
     Vec2 correction = n * error;
 
-    a.pos += correction * (w1 / sum) * k;
-    b.pos -= correction * (w2 / sum) * k;
+    a.pos += correction * (wA / sum) * k;
+    b.pos -= correction * (wB / sum) * k;
   }
 
   for (AngleJoint& anglej : world.anglejoints)
@@ -65,14 +65,41 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
     Vec2 ab = a.pos - b.pos;
     Vec2 bc = c.pos - b.pos;
 
-    AngleRad angle = AngleRad(atan2f(cross(ab, bc), dot(ab, bc)) * (M_PI / 180));
+    AngleGrad angle = AngleRad(atan2f(cross(ab, bc), dot(ab, bc)));
 
     ab = ab.rotate(angle);
     bc = bc.rotate(angle);
 
-    if (angle.rad < AngleRad(anglej.minAngle).rad)
-    {
+    AngleGrad targetAngle;
 
-    }
+    if (angle.grad < anglej.minAngle.grad)
+      targetAngle = anglej.minAngle;
+    else if (angle.grad > anglej.maxAngle.grad)
+      targetAngle = anglej.maxAngle;
+    else
+      continue;
+
+    float delta = targetAngle.grad - angle.grad;
+
+    delta *= k;
+
+    float wA = a.inverseMass;
+    float wC = c.inverseMass;
+
+    float sum = wA + wC;
+
+    if (sum == 0.0f)
+      continue;
+
+    float correction = delta * k;
+
+    float factorA = wA / sum;
+    float factorC = wC / sum;
+
+    Vec2 newAB = ab.rotate(AngleGrad{ correction * factorA});
+    Vec2 newBC = bc.rotate(AngleGrad{-correction * factorC});
+
+    a.pos = b.pos + newAB;
+    c.pos = b.pos + newBC;
   }
 }

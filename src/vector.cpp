@@ -18,6 +18,17 @@ AngleRad::AngleRad(const AngleGrad& angle)
   : rad(angle.toRad().rad)
 {}
 
+AngleGrad AngleRad::toGrad()
+const {
+  return AngleGrad(this->rad * (180.0f / M_PI));
+}
+
+AngleRad AngleGrad::toRad()
+const {
+  return AngleRad(this->grad * (M_PI / 180.0f));
+}
+
+
 Vec2::Vec2(const float x, const float y)
 {
   this->x = x;
@@ -37,7 +48,7 @@ const {
 Vec2 Vec2::norm()
 const {
   float len = this->length();
-  if (len< 1e-6f)
+  if (len < 1e-6f)
     return {0, 0};
   return *this / len;
 }

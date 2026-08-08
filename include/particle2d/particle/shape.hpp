@@ -12,6 +12,8 @@ enum class BodyType
   Dynamic
 };
 
+uint32_t type
+
 class Body
 {
   BodyType type;
