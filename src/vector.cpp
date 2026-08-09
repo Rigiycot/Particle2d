@@ -53,6 +53,12 @@ const {
   return *this / len;
 }
 
+Vec2 Vec2::perpendicular()
+const {
+  return {-y, x};
+}
+
+
 Vec2 Vec2::operator+(const Vec2& other)
 const {
   return {this->x + other.x, this->y + other.y};

@@ -58,6 +58,8 @@ struct Vec2
 
   Vec2 rotate(const AngleGrad& angle) const;
   Vec2 rotate(const AngleRad&  angle) const;
+
+  Vec2 perpendicular() const;
 };
 
 float dot(const Vec2& a, const Vec2& b);

@@ -1,8 +1,15 @@
 #pragma once
 
+#include "particle2d/vector.hpp" 
 #include <cstdint>
 
 class World;
+
+struct Collision
+{
+  Vec2 normal;
+  float depth;
+};
 
 class Solver
 {
