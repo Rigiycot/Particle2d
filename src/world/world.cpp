@@ -8,7 +8,13 @@
 
 void World::step(float dt, uint8_t iterations)
 {
-  
+  this->solver.integrate(*this, dt);
+
+  for (int i = 0; i < iterations; ++i)
+  {
+    solver.constraints(*this, dt, iterations);
+    solver.collisions(*this, dt);
+  }
 }
 
 void World::addVelocity(ParticleID id, const Vec2& velocity, float dt)
