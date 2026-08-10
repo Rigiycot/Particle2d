@@ -146,8 +146,8 @@ void Solver::collisions(World& world, float dt)
 
             case ShapeType::Rectangle:
             {
-              auto& rectA = static_cast<RectangleShape&>(*first);
-              auto& rectB = static_cast<RectangleShape&>(*second);
+              RectangleShape& rectA = static_cast<RectangleShape&>(*first);
+              RectangleShape& rectB = static_cast<RectangleShape&>(*second);
               
               std::array<Vec2, 4> a;
               std::array<Vec2, 4> b;
@@ -241,14 +241,43 @@ void Solver::collisions(World& world, float dt)
 
             case ShapeType::Circle:
             {
-              auto& rect = static_cast<RectangleShape>(*first);
-              auto& rect = static_cast<CircleShape>(*second);
-              std::array<Particle, 4> rect;
-              Vec2 center;
-              float radius;
+              RectangleShape& rect = static_cast<RectangleShape&>(*first);
+              CircleShape&  circle = static_cast<CircleShape&>(*second);
+              Particle& centerP = world.getParticle(circle.center);
+              Vec2 center = centerP.pos;
+              float radius = circle.radius;
+
+              Vec2 newCenter = center;
 
               for (size_t i = 0; i < 4; ++i)
-                rect[i] = world.getParticle()
+              {
+                Particle& point = world.getParticle(rect.points[i]);
+
+                Vec2 delta = point.pos - center;
+                float dist = delta.length();
+                
+                if (dist < radius && dist > 0.0f)
+                {
+                  Vec2 normal = delta.norm();
+
+                  float overlap = radius - dist;
+
+                  float m1 = point.inverseMass;
+                  float m2 = centerP.inverseMass;
+
+                  float sum = m1 + m2;
+
+                  if (sum == 0.0f)
+                    continue;
+                
+                  Vec2 correction = normal * overlap;
+
+                  point.pos += correction * (m1 / sum);
+                  newCenter -= correction * (m2 / sum);
+                }
+              }
+
+              centerP.pos = newCenter;
             }
           }
       }
