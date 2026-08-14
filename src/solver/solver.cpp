@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <utility> 
 #include <cfloat>
+#include <algorithm>
 
 void Solver::integrate(World& world, float dt)
 {
@@ -160,7 +161,7 @@ void Solver::collisions(World& world, float dt)
 
               auto sat = [](const auto& a, const auto& b) -> std::pair<float, Vec2>
               {
-                float min_overlap = FLT_MAX;
+                float minOverlap = FLT_MAX;
                 Vec2 bestAxis;
 
                 for (const auto& p : {a, b})
@@ -191,14 +192,14 @@ void Solver::collisions(World& world, float dt)
 
                     float overlap = std::min(maxA, maxB) - std::max(minA, minB);
 
-                    if (overlap < min_overlap)
+                    if (overlap < minOverlap)
                     {
-                      min_overlap = overlap;
+                      minOverlap = overlap;
                       bestAxis = axis;
                     }
                   }
                 }
-                return {min_overlap, bestAxis};
+                return {minOverlap, bestAxis};
               };
 
               auto [overlap, axis] = sat(a, b);
@@ -247,35 +248,134 @@ void Solver::collisions(World& world, float dt)
               Vec2 center = centerP.pos;
               float radius = circle.radius;
 
+              std::array<Vec2, 4> points;
+              for (size_t i = 0; i < 4; ++i)
+                points[i] = world.getParticle(rect.points[i]).pos;
+
               Vec2 newCenter = center;
+
+              Vec2 axis1 = (points[1] - points[0]).perpendicular().norm();
+              Vec2 axis2 = (points[3] - points[0]).perpendicular().norm();
+
+              Vec2 bestAxis = axis1;
+
+              float minRect =  FLT_MAX;
+              float maxRect = -FLT_MAX;
+
+              float minRect2 =  FLT_MAX;
+              float maxRect2 = -FLT_MAX;
+
+              for (const Vec2& point : points)
+              {
+                float proj = dot(point, axis1);
+                float proj2 = dot(point, axis2);
+
+                minRect = std::min(minRect, proj);
+                maxRect = std::max(maxRect, proj);
+
+                minRect2 = std::min(minRect2, proj2);
+                maxRect2 = std::max(maxRect2, proj2);
+              }
+
+              float centerProj =  dot(center, axis1);
+              float centerProj2 = dot(center, axis2);
+              
+              float minCircle = centerProj - radius;
+              float maxCircle = centerProj + radius;
+
+              float minCircle2 = centerProj2 - radius;
+              float maxCircle2 = centerProj2 + radius;
+
+              if (maxRect < minCircle || minRect > maxCircle || maxRect2 < minCircle2 || minRect2 > maxCircle2)
+                break;
+
+              float overlap =  std::min(maxRect,  maxCircle ) - std::max(minRect,  minCircle );
+              float overlap2 = std::min(maxRect2, maxCircle2) - std::max(minRect2, minCircle2);
+
+              if (overlap < overlap2)
+              {
+                overlap  = overlap2;
+                bestAxis = axis2;
+              }
+
+              float closestDistSq = FLT_MAX;
+              Vec2 closestPoint;
 
               for (size_t i = 0; i < 4; ++i)
               {
-                Particle& point = world.getParticle(rect.points[i]);
+                Vec2 a = points[i];
+                Vec2 b = points[(i+1) % 4];
 
-                Vec2 delta = point.pos - center;
-                float dist = delta.length();
-                
-                if (dist < radius && dist > 0.0f)
+                Vec2 edge = b - a;
+
+                float t = dot(center - a, edge) / edge.lengthSquared();
+
+                t = std::clamp(t, 0.0f, 1.0f);
+
+                Vec2 closest = a + edge * t;
+
+                float distSq = (closest - center).lengthSquared();
+                float dist   = std::sqrtf(distSq);
+
+                if (distSq < closestDistSq)
                 {
-                  Vec2 normal = delta.norm();
-
-                  float overlap = radius - dist;
-
-                  float m1 = point.inverseMass;
-                  float m2 = centerP.inverseMass;
-
-                  float sum = m1 + m2;
-
-                  if (sum == 0.0f)
-                    continue;
-                
-                  Vec2 correction = normal * overlap;
-
-                  point.pos += correction * (m1 / sum);
-                  newCenter -= correction * (m2 / sum);
+                    closestDistSq = distSq;
+                    closestPoint = closest;
                 }
               }
+
+              Vec2 delta = center - closestPoint;
+              float dist = delta.length();
+
+              float closestOverlap = radius - dist;;
+
+              if (dist < radius && dist > 0.0f)
+              {
+                Vec2 norm = delta.norm();
+                float closestOverlap = radius - dist;
+
+                if (closestOverlap < overlap)
+                {
+                  overlap = closestOverlap;
+                  bestAxis = norm;
+                }
+              }
+
+              Vec2 correction = bestAxis * overlap;
+
+              Vec2 rectCenter;
+              for (const Vec2& point : points)
+                rectCenter += point;
+
+              rectCenter /= 4.0f;
+
+              if (dot(bestAxis, center - rectCenter) < 0.0f)
+                bestAxis = -bestAxis;
+
+              float rectInverseMass = 0.0f;
+
+              for (size_t i = 0; i < 4; ++i)
+                rectInverseMass += world.getParticle(rect.points[i]).inverseMass;
+
+              float circleInverseMass = centerP.inverseMass;
+
+              float sum = rectInverseMass + circleInverseMass;
+
+              if (sum == 0.0f)
+                break;
+              
+              Vec2 rectCorrection =   correction * (rectInverseMass   / sum);
+              Vec2 circleCorrection = correction * (circleInverseMass / sum);
+
+              for (size_t i = 0; i < 4; ++i)
+              {
+                Particle& particle = world.getParticle(rect.points[i]);
+
+                if (rectInverseMass > 0.0f)
+                  particle.pos -= rectCorrection * (particle.inverseMass / sum);
+              }
+
+              newCenter += circleCorrection;
 
               centerP.pos = newCenter;
             }
