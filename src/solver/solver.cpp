@@ -324,24 +324,42 @@ void Solver::collisions(World& world, float dt)
                 }
               }
 
+              bool inside = centerProj >= minRect &&
+                            centerProj <= maxRect &&
+                            centerProj2 >= minRect2 &&
+                            centerProj2 <= maxRect2;
+
               Vec2 delta = center - closestPoint;
               float dist = delta.length();
 
-              float closestOverlap = radius - dist;;
-
-              if (dist < radius && dist > 0.0f)
+              if (inside)
               {
-                Vec2 norm = delta.norm();
+                Vec2 normal;
+                
+                if (dist > 0.0f)
+                  normal = delta.norm();
+                else 
+                  normal = bestAxis;
+
+                float closestOverlap = radius + dist;
+
+                if (closestOverlap < overlap)
+                {
+                  overlap = closestOverlap;
+                  bestAxis = normal;
+                }
+              }
+              else if (dist < radius && dist > 0.0f)
+              {
+                Vec2 normal = delta.norm();
                 float closestOverlap = radius - dist;
 
                 if (closestOverlap < overlap)
                 {
                   overlap = closestOverlap;
-                  bestAxis = norm;
+                  bestAxis = normal;
                 }
               }
-
-              Vec2 correction = bestAxis * overlap;
 
               Vec2 rectCenter;
               for (const Vec2& point : points)
@@ -363,6 +381,8 @@ void Solver::collisions(World& world, float dt)
 
               if (sum == 0.0f)
                 break;
+
+              Vec2 correction = bestAxis * overlap;
               
               Vec2 rectCorrection =   correction * (rectInverseMass   / sum);
               Vec2 circleCorrection = correction * (circleInverseMass / sum);
