@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <future>
 #include <stdexcept>
 #include <utility> 
 #include <cfloat>
@@ -334,19 +335,16 @@ void Solver::collisions(World& world, float dt)
 
               if (inside)
               {
-                Vec2 normal;
-                
                 if (dist > 0.0f)
-                  normal = delta.norm();
-                else 
-                  normal = bestAxis;
-
-                float closestOverlap = radius + dist;
-
-                if (closestOverlap < overlap)
                 {
-                  overlap = closestOverlap;
-                  bestAxis = normal;
+                  Vec2 normal = -delta.norm();
+                  float closestOverlap = radius + dist;
+
+                  if (closestOverlap < overlap)
+                  {
+                    overlap = closestOverlap;
+                    bestAxis = normal;
+                  }
                 }
               }
               else if (dist < radius && dist > 0.0f)
@@ -392,12 +390,145 @@ void Solver::collisions(World& world, float dt)
                 Particle& particle = world.getParticle(rect.points[i]);
 
                 if (rectInverseMass > 0.0f)
-                  particle.pos -= rectCorrection * (particle.inverseMass / sum);
+                  particle.pos -= rectCorrection * (particle.inverseMass / rectInverseMass);
               }
 
               newCenter += circleCorrection;
 
               centerP.pos = newCenter;
+            }
+
+            case ShapeType::Capsule:
+            {
+              RectangleShape& rect  = static_cast<RectangleShape&>(*first);
+              CapsuleShape& capsule = static_cast<CapsuleShape&>(*second);
+
+              Particle& aP = world.getParticle(capsule.a);
+              Particle& bP = world.getParticle(capsule.b);
+
+
+              float rectInverseMass = 0.0f;
+
+              for (int i = 0; i < 4; ++i)
+                rectInverseMass += world.getParticle(rect.points[i]).inverseMass;
+
+              float capsuleInverseMass = aP.inverseMass + bP.inverseMass;
+
+              float sum = rectInverseMass + capsuleInverseMass;
+
+              if (sum == 0.0f)
+                break;
+
+
+
+              Vec2 a = aP.pos;
+              Vec2 b = bP.pos;
+
+              float radius = capsule.radius;
+
+              std::array<Vec2, 4> points;
+
+              for (int i = 0; i < 4; ++i)
+                points[i] = world.getParticle(rect.points[i]).pos;
+
+
+              Vec2 axis1 = (points[1] - points[0]).perpendicular().norm();
+              Vec2 axis2 = (points[3] - points[0]).perpendicular().norm();
+
+              Vec2 capsuleAxis = (b - a).perpendicular().norm();
+
+              float overlap = FLT_MAX;
+              Vec2 bestAxis;
+
+              auto testAxis = [&](Vec2 axis) -> bool
+              {
+                if (axis.lengthSquared() == 0.0f)
+                  return true;
+
+                axis = axis.norm();
+
+
+                float minRect = FLT_MAX;
+                float maxRect = -FLT_MAX;
+
+                for (const Vec2& point : points)
+                {
+                  float p = dot(point, axis);
+
+                  minRect = std::min(minRect, p);
+                  maxRect = std::max(maxRect, p);
+                }
+
+
+                float projA = dot(a, axis);
+                float projB = dot(b, axis);
+
+                float minCapsule = std::min(projA, projB) - radius;
+                float maxCapsule = std::max(projA, projB) + radius;
+
+                if (maxRect < minCapsule || minRect > maxCapsule)
+                  return false;
+
+                float currentOverlap = std::min(maxRect, maxCapsule) - std::max(minRect, minCapsule);
+
+                if (currentOverlap < overlap)
+                {
+                  overlap = currentOverlap;
+                  bestAxis = axis;
+                }
+
+                return true;
+              };
+
+              if (!testAxis((points[1] - points[0]).perpendicular()) || !testAxis((points[3] - points[0]).perpendicular()) || !testAxis((b - a).perpendicular()))
+                break;
+
+              bool collision = true;
+              for (const Vec2& point : points)
+              {
+                if (!testAxis(point - a) || !testAxis(point - b))
+                {
+                  collision = false;
+                  break;
+                }
+              }
+
+              if (!collision)
+                break;
+              
+              Vec2 rectCenter;
+
+              for (const Vec2& point : points)
+                rectCenter += point;
+
+              rectCenter /= 4.0f;
+
+
+              Vec2 capsuleCenter = (a + b) * 0.5f;
+
+              if (dot(bestAxis, capsuleCenter - rectCenter) < 0.0f)
+                bestAxis = -bestAxis;
+
+              
+              Vec2 correction = bestAxis * overlap;
+
+              Vec2 rectCorrection = correction * (rectInverseMass / sum);
+              Vec2 capsuleCorrection = correction * (capsuleInverseMass / sum);
+
+              for (int i = 0; i < 4; ++i)
+              {
+                Particle& particle = world.getParticle(rect.points[i]);
+
+                if (rectInverseMass > 0.0f)
+                  particle.pos -= rectCorrection * (particle.inverseMass / rectInverseMass);
+              }
+
+              if (capsuleInverseMass > 0.0f)
+              {
+                aP.pos += capsuleCorrection * (aP.inverseMass / capsuleInverseMass);
+                bP.pos += capsuleCorrection * (bP.inverseMass / capsuleInverseMass);
+              }
+
             }
           }
       }
