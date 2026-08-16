@@ -531,6 +531,48 @@ void Solver::collisions(World& world, float dt)
 
             }
           }
+
+        case ShapeType::Circle:
+          {
+            switch (second->type)
+            {
+              case ShapeType::Circle:
+                {
+                  CircleShape& circle1 = static_cast<CircleShape&>(*first);
+                  CircleShape& circle2 = static_cast<CircleShape&>(*second);
+
+                  Particle& c1 = world.getParticle(circle1.center);
+                  Particle& c2 = world.getParticle(circle2.center);
+
+
+                  Vec2 delta = c2.pos - c1.pos;
+                  float distSq = delta.lengthSquared();
+
+                  float radiusSum = circle1.radius + circle2.radius;
+
+                  if (distSq >= radiusSum * radiusSum)
+                    break;
+
+                  float dist = std::sqrtf(distSq);
+
+                  if (dist == 0.0f)
+                    break;
+
+                  Vec2 normal = delta / dist;
+                  float overlap = radiusSum - dist;
+
+                  float sum = c1.inverseMass + c2.inverseMass;
+
+                  if (sum == 0.0f)
+                    break;
+
+                  Vec2 correction = normal * overlap;
+
+                  c1.pos 
+
+                }
+            }
+          }
       }
     }
   }
