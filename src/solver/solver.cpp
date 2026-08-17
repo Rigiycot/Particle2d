@@ -20,9 +20,10 @@ void Solver::integrate(World& world, float dt)
     if (!p.isActive)
       continue;
 
-    Vec2 velocity = p.pos - p.prevPos;
+    Vec2 prev = p.prevPos;
 
     p.prevPos = p.pos;
+    Vec2 velocity = p.pos - p.prevPos;
 
     p.pos += velocity;
 
