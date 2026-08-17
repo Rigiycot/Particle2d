@@ -181,16 +181,13 @@ BodyID World::createBody(const Body& body)
 }
 
 ShapeID World::createRectangle(
-  Vec2 min,
-  Vec2 max,
+  Vec2 center,
+  Vec2 halfSize,
   AngleRad rotation,
   float inverseMass,
   uint64_t category,
   uint64_t collides)
 {
-  Vec2 center = (min + max) * 0.5f;
-  Vec2 halfSize = (max - min) * 0.5f;
-
   Vec2 p0{-halfSize.x, -halfSize.y};
   Vec2 p1{ halfSize.x, -halfSize.y};
   Vec2 p2{ halfSize.x,  halfSize.y};
@@ -203,25 +200,10 @@ ShapeID World::createRectangle(
 
   float particleInverseMass = inverseMass * 0.25f;
 
-  ParticleID id0 = createParticle({
-    p0,
-    particleInverseMass
-  });
-
-  ParticleID id1 = createParticle({
-    p1,
-    particleInverseMass
-  });
-
-  ParticleID id2 = createParticle({
-    p2,
-    particleInverseMass
-  });
-
-  ParticleID id3 = createParticle({
-    p3,
-    particleInverseMass
-  });
+  ParticleID id0 = createParticle({p0, particleInverseMass});
+  ParticleID id1 = createParticle({p1, particleInverseMass});
+  ParticleID id2 = createParticle({p2, particleInverseMass});
+  ParticleID id3 = createParticle({p3, particleInverseMass});
 
   createJoint({
     id0,
@@ -252,36 +234,28 @@ ShapeID World::createRectangle(
   });
 
   createAngleJoint({
-    id0,
-    id1,
-    id2,
+    id0, id1, id2,
     AngleGrad{90.0f},
     AngleGrad{90.0f},
     1.0f
   });
 
   createAngleJoint({
-    id1,
-    id2,
-    id3,
+    id1, id2, id3,
     AngleGrad{90.0f},
     AngleGrad{90.0f},
     1.0f
   });
 
   createAngleJoint({
-    id2,
-    id3,
-    id0,
+    id2, id3, id0,
     AngleGrad{90.0f},
     AngleGrad{90.0f},
     1.0f
   });
 
   createAngleJoint({
-    id3,
-    id0,
-    id1,
+    id3, id0, id1,
     AngleGrad{90.0f},
     AngleGrad{90.0f},
     1.0f
@@ -305,7 +279,7 @@ ShapeID World::createRectangle(
   });
 
   return shapeID;
-}
+};
 
 ShapeID World::createRectangle(
   Vec2 min,
@@ -319,7 +293,7 @@ ShapeID World::createRectangle(
     min,
     max,
     AngleRad{
-      rotation.grad * 3.14159265358979323846f / 180.0f
+      rotation.toRad().rad
     },
     inverseMass,
     category,
@@ -512,7 +486,7 @@ ShapeID World::createCapsule(
     center,
     length,
     AngleRad{
-      rotation.grad * 3.14159265358979323846f / 180.0f
+      rotation.toRad().rad
     },
     radius,
     inverseMass,
