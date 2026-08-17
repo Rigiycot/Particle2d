@@ -66,7 +66,7 @@ const {
 
 Vec2 Vec2::operator-(const Vec2& other)
 const {
-  return {this->x - other.y, this->y - other.y};
+  return {this->x - other.x, this->y - other.y};
 }
 
 Vec2 Vec2::operator*(const float scalar)
@@ -148,34 +148,13 @@ const {
   return this->rotate(angle.toRad());
 }
 
-Edge::Edge(const Vec2& a, const Vec2& b)
-  : a(a), b(b)
-{}
 
-Edge::Edge(const Edge& other)
+float dot(const Vec2& a, const Vec2& b)
 {
-  this->a = other.a;
-  this->b = other.b;
+  return a.x * b.x + a.y * b.y;
 }
 
-Edge Edge::rotate(const AngleRad& angle)
-const {
-  return {
-    this->a,
-    this->a + (this->b - this->a).rotate(angle)
-  };
-}
-
-Edge Edge::rotate(const AngleGrad& angle)
-const {
-  AngleRad angleRad = angle.toRad();
-  return this->rotate(angleRad);
-}
-
-Edge Edge::rotate(const Vec2& pivot, const AngleGrad& angle)
-const {
-  return {
-    pivot + (this->a - pivot).rotate(angle),
-    pivot + (this->b - pivot).rotate(angle)
-  };
+float cross(const Vec2& a, const Vec2& b)
+{
+  return a.x * b.y - a.y * b.x;
 }
