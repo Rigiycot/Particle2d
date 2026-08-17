@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <cmath>
+
 void World::step(float dt, uint8_t iterations)
 {
   solver.integrate(*this, dt);
@@ -17,6 +19,12 @@ void World::step(float dt, uint8_t iterations)
   {
     solver.constraints(*this, dt, iterations);
     solver.collisions(*this, dt);
+  }
+  
+  for (Particle& p : particles)
+  {
+    if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
+      throw std::runtime_error("NaN after integrate");
   }
 }
 
