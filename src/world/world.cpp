@@ -282,23 +282,14 @@ ShapeID World::createRectangle(
 };
 
 ShapeID World::createRectangle(
-  Vec2 min,
-  Vec2 max,
+  Vec2 center,
+  Vec2 halfSize,
   AngleGrad rotation,
   float inverseMass,
   uint64_t category,
   uint64_t collides)
 {
-  return createRectangle(
-    min,
-    max,
-    AngleRad{
-      rotation.toRad().rad
-    },
-    inverseMass,
-    category,
-    collides
-  );
+  return this->createRectangle(center, halfSize, rotation.toRad(), inverseMass, category, collides);
 }
 
 ShapeID World::createRectangle(
