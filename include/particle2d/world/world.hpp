@@ -37,8 +37,8 @@ class World
     Body&       getBody(BodyID id);
 
     ShapeID createRectangle(
-      Vec2 min,
-      Vec2 max,
+      Vec2 center,
+      Vec2 halfSize,
       AngleRad rotation,
       float inverseMass,
       uint64_t category,
@@ -46,8 +46,8 @@ class World
     );
 
     ShapeID createRectangle(
-      Vec2 min,
-      Vec2 max,
+      Vec2 center,
+      Vec2 halfSize,
       AngleGrad rotation,
       float inverseMass,
       uint64_t category,
