@@ -15,16 +15,26 @@ void World::step(float dt, uint8_t iterations)
 {
   solver.integrate(*this, dt);
 
-  for (uint8_t i = 0; i < iterations; ++i)
-  {
-    solver.constraints(*this, dt, iterations);
-    solver.collisions(*this, dt);
-  }
-  
   for (Particle& p : particles)
   {
     if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
       throw std::runtime_error("NaN after integrate");
+  }
+
+  for (uint8_t i = 0; i < iterations; ++i)
+  {
+    solver.constraints(*this, dt, iterations);
+    for (Particle& p : particles)
+    {
+      if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
+        throw std::runtime_error("NaN after constraints");
+    }
+    solver.collisions(*this, dt);
+    for (Particle& p : particles)
+    {
+      if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
+        throw std::runtime_error("NaN after collisions");
+    }
   }
 }
 

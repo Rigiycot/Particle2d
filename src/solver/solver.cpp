@@ -13,22 +13,61 @@
 #include <cfloat>
 #include <algorithm>
 
+#include <iostream>
+
+
 void Solver::integrate(World& world, float dt)
 {
+  if (dt <= 0.0f) {
+      throw std::runtime_error("Некорректный временной шаг");
+  }
+
+    
   for (Particle& p : world.particles)
   {
+    if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
+      throw std::runtime_error("NaN before integrate: pos");
+
+    if (!std::isfinite(p.prevPos.x) || !std::isfinite(p.prevPos.y))
+      throw std::runtime_error("NaN before integrate: prevPos");
+
+    if (!std::isfinite(p.inverseMass))
+      throw std::runtime_error("NaN before integrate: inverseMass");
+
+    if (!std::isfinite(world.gravity.x) ||
+      !std::isfinite(world.gravity.y))
+      throw std::runtime_error("NaN before integrate: gravity");
+
+    if (!std::isfinite(dt))
+      throw std::runtime_error("NaN before integrate: dt");
+
     if (!p.isActive)
-      continue;
+        continue;
 
-    Vec2 prev = p.prevPos;
+    if (p.inverseMass < 0.0f) {
+        throw std::runtime_error("Некорректная inverseMass");
+    }
 
-    p.prevPos = p.pos;
-    Vec2 velocity = p.pos - p.prevPos;
-
-    p.pos += velocity;
-
+    Vec2 prev = p.pos;
+    Vec2 acceleration = {0.0f, 0.0f};
     if (p.useGravity)
-      p.pos += world.gravity * dt * dt;
+      acceleration += world.gravity;
+      
+    float x = p.pos.x * 2.0f - prev.x + acceleration.x * dt * dt;
+    float y = p.pos.y * 2.0f - prev.y + acceleration.y * dt * dt;
+
+    if (!std::isfinite(x) || !std::isfinite(y)) {
+      std::cerr
+        << "INTEGRATE FAIL\n"
+        << "pos: " << p.pos.x << ", " << p.pos.y << '\n'
+        << "prev: " << prev.x << ", " << prev.y << '\n'
+        << "acc: " << acceleration.x << ", " << acceleration.y << '\n'
+        << "dt: " << dt << '\n';
+
+      throw std::runtime_error("NaN after integrate");
+    }
+
+    p.pos = {x, y};  
   }
 }
 
@@ -58,14 +97,23 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
     if (dist == 0.0f)
       continue;
 
+    if (!std::isfinite(dist))
+      throw std::runtime_error("Infinite Joint distance");
+
+    std::cerr
+      << "Joint: "
+      << joint.a << " - " << joint.b << '\n'
+      << "A: " << a.pos.x << ", " << a.pos.y << '\n'
+      << "B: " << b.pos.x << ", " << b.pos.y << '\n';
+
     Vec2 n = delta / dist;
 
     float error = dist - joint.length;
 
     Vec2 correction = n * error * k;
 
-    a.pos += correction * (wA / sum);
-    b.pos -= correction * (wB / sum);
+    a.pos -= correction * (wA / sum);
+    b.pos += correction * (wB / sum);
   }
 
   for (AngleJoint& anglej : world.anglejoints)
@@ -109,11 +157,11 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
     float factorC = wC / sum;
 
     Vec2 newAB = ab.rotate(
-      AngleGrad{delta * factorA}
+      AngleGrad{-delta * factorA}
     );
 
     Vec2 newBC = bc.rotate(
-      AngleGrad{-delta * factorC}
+      AngleGrad{delta * factorC}
     );
 
     a.pos = b.pos + newAB;
