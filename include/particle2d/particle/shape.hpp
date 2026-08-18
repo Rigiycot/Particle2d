@@ -29,11 +29,11 @@ namespace p2
   class Shape
   {
     private:
-      ShapeType type;
       friend class Solver;
     protected:
       Shape(ShapeType type = ShapeType::None) : type(type) {};
     public:
+      ShapeType type;
       virtual ~Shape() = default;
   };
 

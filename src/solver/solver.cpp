@@ -14,7 +14,7 @@
 #include <algorithm>
 
 
-void Solver::integrate(World& world, float dt)
+void p2::Solver::integrate(World& world, float dt)
 {
   if (dt <= 0.0f) {
       throw std::runtime_error("Некорректный временной шаг");
@@ -55,7 +55,7 @@ void Solver::integrate(World& world, float dt)
   }
 }
 
-void Solver::constraints(World& world, float dt, uint16_t iterations)
+void p2::Solver::constraints(World& world, float dt, uint16_t iterations)
 {
   for (Joint& joint : world.joints)
   {
@@ -147,7 +147,7 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
   }
 }
 
-void Solver::collisions(World& world, float dt)
+void p2::Solver::collisions(World& world, float dt)
 {
   for (auto it1 = world.bodies.begin(); it1 != world.bodies.end(); ++it1)
   {

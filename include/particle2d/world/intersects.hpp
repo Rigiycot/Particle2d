@@ -10,7 +10,9 @@ namespace p2 {
     Vec2 normal;
   };
 
-  Collision collide(const Shape& a, const Shape& b);
+  class World;
 
-  bool intersects(const Shape& a, const Shape& b);
+  Collision collide(const Shape& a, const Shape& b, p2::World world);
+
+  bool intersects(const Shape& a, const Shape& b, p2::World world);
 }
