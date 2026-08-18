@@ -3,23 +3,26 @@
 #include "particle2d/types.hpp"
 #include "particle2d/vector.hpp"
 
-struct Joint
+namespace p2 
 {
-  ParticleID a;
-  ParticleID b;
+  struct Joint
+  {
+    ParticleID a;
+    ParticleID b;
 
-  float length;
-  float shiftness;
-};
+    float length;
+    float shiftness;
+  };
 
-struct AngleJoint
-{
-  ParticleID a;
-  ParticleID b;
-  ParticleID c;
-  
-  AngleGrad minAngle;
-  AngleGrad maxAngle;
+  struct AngleJoint
+  {
+    ParticleID a;
+    ParticleID b;
+    ParticleID c;
+    
+    AngleGrad minAngle;
+    AngleGrad maxAngle;
 
-  float shiftness;
-};
+    float shiftness;
+  };
+}

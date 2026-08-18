@@ -2,19 +2,20 @@
 
 #include "particle2d/vector.hpp"
 
-struct Particle 
+namespace p2 
 {
-  Vec2 pos;
-  Vec2 prevPos;
+  struct Particle 
+  {
+    Vec2 pos;
+    Vec2 prevPos;
 
-  float inverseMass;
+    float inverseMass;
 
-  bool isActive = true;
-  bool useGravity = true;
+    bool isActive = true;
+    bool useGravity = true;
 
-  Particle(Vec2 pos = Vec2{0, 0}, float inverseMass = 1)
-    : pos(pos), inverseMass(inverseMass)
-  {};
-};
-
-
+    Particle(Vec2 pos = Vec2{0, 0}, float inverseMass = 1)
+      : pos(pos), inverseMass(inverseMass)
+    {};
+  };
+}

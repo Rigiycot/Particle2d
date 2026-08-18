@@ -2,11 +2,14 @@
 
 #include <cstdint>
 
-using ID = uint16_t;
+namespace p2 
+{
+  using ID = uint16_t;
 
-using WorldID      = ID;
-using ParticleID   = ID;
-using ShapeID      = ID;
-using JointID      = ID;
-using AngleJointID = ID;
-using BodyID       = ID;
+  using WorldID      = ID;
+  using ParticleID   = ID;
+  using ShapeID      = ID;
+  using JointID      = ID;
+  using AngleJointID = ID;
+  using BodyID       = ID;
+}

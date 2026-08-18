@@ -11,11 +11,11 @@
 
 #include <cmath>
 
-void World::step(float dt, uint8_t iterations)
+void p2::World::step(float dt, uint8_t iterations)
 {
   solver.integrate(*this, dt);
 
-  for (Particle& p : particles)
+  for (p2::Particle& p : particles)
   {
     if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
       throw std::runtime_error("NaN after integrate");
@@ -24,13 +24,13 @@ void World::step(float dt, uint8_t iterations)
   for (uint8_t i = 0; i < iterations; ++i)
   {
     solver.constraints(*this, dt, iterations);
-    for (Particle& p : particles)
+    for (p2::Particle& p : particles)
     {
       if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
         throw std::runtime_error("NaN after constraints");
     }
     solver.collisions(*this, dt);
-    for (Particle& p : particles)
+    for (p2::Particle& p : particles)
     {
       if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
         throw std::runtime_error("NaN after collisions");
@@ -38,28 +38,28 @@ void World::step(float dt, uint8_t iterations)
   }
 }
 
-void World::addVelocity(ParticleID id, const Vec2& velocity, float dt)
+void p2::World::addVelocity(p2::ParticleID id, const p2::Vec2& velocity, float dt)
 {
-  Particle& prt = getParticle(id);
+  p2::Particle& prt = getParticle(id);
 
   prt.prevPos -= velocity * dt;
 }
 
-void World::dampVelocity(ParticleID id, float amount)
+void p2::World::dampVelocity(p2::ParticleID id, float amount)
 {
-  Particle& prt = getParticle(id);
+  p2::Particle& prt = getParticle(id);
 
-  Vec2 velocity = prt.pos - prt.prevPos;
+  p2::Vec2 velocity = prt.pos - prt.prevPos;
   velocity *= amount;
 
   prt.prevPos = prt.pos - velocity;
 }
 
-Vec2 World::rotate(ParticleID id, float angle)
+p2::Vec2 p2::World::rotate(p2::ParticleID id, float angle)
 {
-  Particle& particle = getParticle(id);
+  p2::Particle& particle = getParticle(id);
 
-  Vec2 velocity = particle.pos - particle.prevPos;
+  p2::Vec2 velocity = particle.pos - particle.prevPos;
 
   velocity = velocity.rotate(AngleGrad{angle});
 
@@ -68,34 +68,34 @@ Vec2 World::rotate(ParticleID id, float angle)
   return velocity;
 }
 
-Particle& World::getParticle(ParticleID id)
+p2::Particle& p2::World::getParticle(p2::ParticleID id)
 {
   return particles.at(particleIDToVec.at(id));
 }
 
-Joint& World::getJoint(JointID id)
+p2::Joint& p2::World::getJoint(p2::JointID id)
 {
   return joints.at(jointIDToVec.at(id));
 }
 
-AngleJoint& World::getAngleJoint(AngleJointID id)
+p2::AngleJoint& p2::World::getAngleJoint(p2::AngleJointID id)
 {
   return anglejoints.at(anglejointIDToVec.at(id));
 }
 
-Shape& World::getShape(ShapeID id)
+p2::Shape& p2::World::getShape(p2::ShapeID id)
 {
   return *shapes.at(shapeIDToVec.at(id));
 }
 
-Body& World::getBody(BodyID id)
+p2::Body& p2::World::getBody(p2::BodyID id)
 {
   return bodies.at(bodyIDToVec.at(id));
 }
 
-ParticleID World::createParticle(const Particle& prt)
+p2::ParticleID p2::World::createParticle(const p2::Particle& prt)
 {
-  ParticleID id;
+  p2::ParticleID id;
 
   if (!particleFreeID.empty())
   {
@@ -115,9 +115,9 @@ ParticleID World::createParticle(const Particle& prt)
   return id;
 }
 
-JointID World::createJoint(const Joint& jnt)
+p2::JointID p2::World::createJoint(const p2::Joint& jnt)
 {
-  JointID id;
+  p2::JointID id;
 
   if (!jointFreeID.empty())
   {
@@ -135,9 +135,9 @@ JointID World::createJoint(const Joint& jnt)
   return id;
 }
 
-AngleJointID World::createAngleJoint(const AngleJoint& ajnt)
+p2::AngleJointID p2::World::createAngleJoint(const p2::AngleJoint& ajnt)
 {
-  AngleJointID id;
+  p2::AngleJointID id;
 
   if (!anglejointFreeID.empty())
   {
@@ -155,12 +155,12 @@ AngleJointID World::createAngleJoint(const AngleJoint& ajnt)
   return id;
 }
 
-ShapeID World::createShape(std::unique_ptr<Shape> shp)
+p2::ShapeID p2::World::createShape(std::unique_ptr<p2::Shape> shp)
 {
   if (!shp)
-    throw std::runtime_error("Cannot create null Shape!");
+    throw std::runtime_error("Cannot create null p2::Shape!");
 
-  ShapeID id;
+  p2::ShapeID id;
 
   if (!shapeFreeID.empty())
   {
@@ -178,9 +178,9 @@ ShapeID World::createShape(std::unique_ptr<Shape> shp)
   return id;
 }
 
-BodyID World::createBody(const Body& body)
+p2::BodyID p2::World::createBody(const p2::Body& body)
 {
-  BodyID id;
+  p2::BodyID id;
 
   if (!bodyFreeID.empty())
   {
@@ -198,18 +198,18 @@ BodyID World::createBody(const Body& body)
   return id;
 }
 
-ShapeID World::createRectangle(
-  Vec2 center,
-  Vec2 halfSize,
+p2::ShapeID p2::World::createRectangle(
+  p2::Vec2 center,
+  p2::Vec2 halfSize,
   AngleRad rotation,
   float inverseMass,
   uint64_t category,
   uint64_t collides)
 {
-  Vec2 p0{-halfSize.x, -halfSize.y};
-  Vec2 p1{ halfSize.x, -halfSize.y};
-  Vec2 p2{ halfSize.x,  halfSize.y};
-  Vec2 p3{-halfSize.x,  halfSize.y};
+  p2::Vec2 p0{-halfSize.x, -halfSize.y};
+  p2::Vec2 p1{ halfSize.x, -halfSize.y};
+  p2::Vec2 p2{ halfSize.x,  halfSize.y};
+  p2::Vec2 p3{-halfSize.x,  halfSize.y};
 
   p0 = p0.rotate(rotation) + center;
   p1 = p1.rotate(rotation) + center;
@@ -218,10 +218,10 @@ ShapeID World::createRectangle(
 
   float particleInverseMass = inverseMass * 0.25f;
 
-  ParticleID id0 = createParticle({p0, particleInverseMass});
-  ParticleID id1 = createParticle({p1, particleInverseMass});
-  ParticleID id2 = createParticle({p2, particleInverseMass});
-  ParticleID id3 = createParticle({p3, particleInverseMass});
+  p2::ParticleID id0 = createParticle({p0, particleInverseMass});
+  p2::ParticleID id1 = createParticle({p1, particleInverseMass});
+  p2::ParticleID id2 = createParticle({p2, particleInverseMass});
+  p2::ParticleID id3 = createParticle({p3, particleInverseMass});
 
   createJoint({
     id0,
@@ -288,7 +288,7 @@ ShapeID World::createRectangle(
     id3
   };
 
-  ShapeID shapeID = createShape(std::move(shape));
+  p2::ShapeID shapeID = createShape(std::move(shape));
 
   createBody({
     shapeID,
@@ -299,9 +299,9 @@ ShapeID World::createRectangle(
   return shapeID;
 };
 
-ShapeID World::createRectangle(
-  Vec2 center,
-  Vec2 halfSize,
+p2::ShapeID p2::World::createRectangle(
+  p2::Vec2 center,
+  p2::Vec2 halfSize,
   AngleGrad rotation,
   float inverseMass,
   uint64_t category,
@@ -310,11 +310,11 @@ ShapeID World::createRectangle(
   return this->createRectangle(center, halfSize, rotation.toRad(), inverseMass, category, collides);
 }
 
-ShapeID World::createRectangle(
-  ParticleID p0,
-  ParticleID p1,
-  ParticleID p2,
-  ParticleID p3,
+p2::ShapeID p2::World::createRectangle(
+  p2::ParticleID p0,
+  p2::ParticleID p1,
+  p2::ParticleID p2,
+  p2::ParticleID p3,
   uint64_t category,
   uint64_t collides)
 {
@@ -332,7 +332,7 @@ ShapeID World::createRectangle(
     p3
   };
 
-  ShapeID shapeID = createShape(std::move(shape));
+  p2::ShapeID shapeID = createShape(std::move(shape));
 
   createBody({
     shapeID,
@@ -343,14 +343,14 @@ ShapeID World::createRectangle(
   return shapeID;
 }
 
-ShapeID World::createCircle(
-  Vec2 center,
+p2::ShapeID p2::World::createCircle(
+  p2::Vec2 center,
   float radius,
   float inverseMass,
   uint64_t category,
   uint64_t collides)
 {
-  ParticleID centerID = createParticle({
+  p2::ParticleID centerID = createParticle({
     center,
     inverseMass
   });
@@ -363,8 +363,8 @@ ShapeID World::createCircle(
   );
 }
 
-ShapeID World::createCircle(
-  ParticleID center,
+p2::ShapeID p2::World::createCircle(
+  p2::ParticleID center,
   float radius,
   uint64_t category,
   uint64_t collides)
@@ -376,7 +376,7 @@ ShapeID World::createCircle(
   shape->center = center;
   shape->radius = radius;
 
-  ShapeID shapeID = createShape(std::move(shape));
+  p2::ShapeID shapeID = createShape(std::move(shape));
 
   createBody({
     shapeID,
@@ -387,20 +387,20 @@ ShapeID World::createCircle(
   return shapeID;
 }
 
-ShapeID World::createCapsule(
-  Vec2 point1,
-  Vec2 point2,
+p2::ShapeID p2::World::createCapsule(
+  p2::Vec2 point1,
+  p2::Vec2 point2,
   float radius,
   float inverseMass,
   uint64_t category,
   uint64_t collides)
 {
-  ParticleID id1 = createParticle({
+  p2::ParticleID id1 = createParticle({
     point1,
     inverseMass * 0.5f
   });
 
-  ParticleID id2 = createParticle({
+  p2::ParticleID id2 = createParticle({
     point2,
     inverseMass * 0.5f
   });
@@ -418,7 +418,7 @@ ShapeID World::createCapsule(
   shape->b = id2;
   shape->radius = radius;
 
-  ShapeID shapeID = createShape(std::move(shape));
+  p2::ShapeID shapeID = createShape(std::move(shape));
 
   createBody({
     shapeID,
@@ -429,9 +429,9 @@ ShapeID World::createCapsule(
   return shapeID;
 }
 
-ShapeID World::createCapsule(
-  ParticleID point1,
-  ParticleID point2,
+p2::ShapeID p2::World::createCapsule(
+  p2::ParticleID point1,
+  p2::ParticleID point2,
   float radius,
   uint64_t category,
   uint64_t collides)
@@ -445,7 +445,7 @@ ShapeID World::createCapsule(
   shape->b = point2;
   shape->radius = radius;
 
-  ShapeID shapeID = createShape(std::move(shape));
+  p2::ShapeID shapeID = createShape(std::move(shape));
 
   createBody({
     shapeID,
@@ -456,8 +456,8 @@ ShapeID World::createCapsule(
   return shapeID;
 }
 
-ShapeID World::createCapsule(
-  Vec2 center,
+p2::ShapeID p2::World::createCapsule(
+  p2::Vec2 center,
   float length,
   AngleRad rotation,
   float radius,
@@ -465,12 +465,12 @@ ShapeID World::createCapsule(
   uint64_t category,
   uint64_t collides)
 {
-  Vec2 direction = Vec2{1.0f, 0.0f}.rotate(rotation);
+  p2::Vec2 direction = Vec2{1.0f, 0.0f}.rotate(rotation);
 
-  Vec2 offset = direction * (length * 0.5f);
+  p2::Vec2 offset = direction * (length * 0.5f);
 
-  Vec2 point1 = center - offset;
-  Vec2 point2 = center + offset;
+  p2::Vec2 point1 = center - offset;
+  p2::Vec2 point2 = center + offset;
 
   return createCapsule(
     point1,
@@ -482,8 +482,8 @@ ShapeID World::createCapsule(
   );
 }
 
-ShapeID World::createCapsule(
-  Vec2 center,
+p2::ShapeID p2::World::createCapsule(
+  p2::Vec2 center,
   float length,
   AngleGrad rotation,
   float radius,
