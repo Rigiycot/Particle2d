@@ -169,6 +169,14 @@ void p2::Solver::collisions(World& world, float dt)
       if (first->type > second->type)
         std::swap(first, second);
 
+      if (first->type == p2::ShapeType::Rectangle && second->type == p2::ShapeType::Rectangle)
+      {
+        RectangleShape& rectA = static_cast<RectangleShape&>(*first);
+        RectangleShape& rectB = static_cast<RectangleShape&>(*second);
+
+ 
+      }
+
       switch (first->type)
       {
         case ShapeType::None:

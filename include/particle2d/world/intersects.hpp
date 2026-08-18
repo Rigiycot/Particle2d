@@ -12,7 +12,7 @@ namespace p2 {
 
   class World;
 
-  Collision collide(const Shape& a, const Shape& b, p2::World world);
+  Collision collide(p2::World world, const Shape& a, const Shape& b);
 
-  bool intersects(const Shape& a, const Shape& b, p2::World world);
+  bool intersects(p2::World world, const Shape& a, const Shape& b);
 }

@@ -116,27 +116,20 @@ namespace
   }
 }
 
-p2::Collision p2::collide(const p2::Shape& a, const p2::Shape& b, p2::World world)
+p2::Collision p2::collide(p2::World world, const p2::Shape& a, const p2::Shape& b)
 {
-  switch (a.type)
+  if (a.type == p2::ShapeType::Rectangle && b.type == p2::ShapeType::Rectangle)
   {
-    case p2::ShapeType::Rectangle:
-      {
-        switch (b.type)
-        {
-          case p2::ShapeType::Rectangle:
-            {
-              const RectangleShape& rect1 = static_cast<const RectangleShape&>(a);
-              const RectangleShape& rect2 = static_cast<const RectangleShape&>(b);
+    const RectangleShape& rect1 = static_cast<const RectangleShape&>(a);
+    const RectangleShape& rect2 = static_cast<const RectangleShape&>(b);
 
-              return rectRect(rect1, rect2, world);
-            }
-        }
-      }
+    return rectRect(rect1, rect2, world);
   }
+
+  return {-1.0f, {}};
 }
 
-bool p2::intersects(const Shape& a, const Shape& b, p2::World world)
+bool p2::intersects(p2::World world, const Shape& a, const Shape& b)
 {
-    return collide(a, b, world).overlap > 0.0f;
+    return collide(world, a, b).overlap > 0.0f;
 }
