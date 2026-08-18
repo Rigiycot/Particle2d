@@ -13,8 +13,6 @@
 #include <cfloat>
 #include <algorithm>
 
-#include <iostream>
-
 
 void Solver::integrate(World& world, float dt)
 {
@@ -53,21 +51,7 @@ void Solver::integrate(World& world, float dt)
     if (p.useGravity)
       acceleration += world.gravity;
       
-    float x = p.pos.x * 2.0f - prev.x + acceleration.x * dt * dt;
-    float y = p.pos.y * 2.0f - prev.y + acceleration.y * dt * dt;
-
-    if (!std::isfinite(x) || !std::isfinite(y)) {
-      std::cerr
-        << "INTEGRATE FAIL\n"
-        << "pos: " << p.pos.x << ", " << p.pos.y << '\n'
-        << "prev: " << prev.x << ", " << prev.y << '\n'
-        << "acc: " << acceleration.x << ", " << acceleration.y << '\n'
-        << "dt: " << dt << '\n';
-
-      throw std::runtime_error("NaN after integrate");
-    }
-
-    p.pos = {x, y};  
+    p.pos = p.pos * 2.0f - prev + acceleration * dt * dt;
   }
 }
 
@@ -99,12 +83,6 @@ void Solver::constraints(World& world, float dt, uint16_t iterations)
 
     if (!std::isfinite(dist))
       throw std::runtime_error("Infinite Joint distance");
-
-    std::cerr
-      << "Joint: "
-      << joint.a << " - " << joint.b << '\n'
-      << "A: " << a.pos.x << ", " << a.pos.y << '\n'
-      << "B: " << b.pos.x << ", " << b.pos.y << '\n';
 
     Vec2 n = delta / dist;
 
