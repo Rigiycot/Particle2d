@@ -4,8 +4,8 @@
 #include "particle2d/vector.hpp"
 #include "particle2d/world/world.hpp"
 #include "particle2d/particle/particle.hpp"
+#include "particle2d/world/intersects.hpp"
 
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
@@ -17,10 +17,9 @@
 void p2::Solver::integrate(World& world, float dt)
 {
   if (dt <= 0.0f) {
-      throw std::runtime_error("Некорректный временной шаг");
+      throw std::runtime_error("Incorrect dt step");
   }
 
-    
   for (Particle& p : world.particles)
   {
     if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
@@ -46,12 +45,16 @@ void p2::Solver::integrate(World& world, float dt)
         throw std::runtime_error("Некорректная inverseMass");
     }
 
+    if (p.inverseMass == 0) continue;
     Vec2 prev = p.pos;
     Vec2 acceleration = {0.0f, 0.0f};
     if (p.useGravity)
       acceleration += world.gravity;
       
-    p.pos = p.pos * 2.0f - prev + acceleration * dt * dt;
+    p.pos = p.pos * 2.0f - p.prevPos + acceleration * dt * dt;
+    world.dampVelocity(p, world.airFriction);
+
+    p.prevPos = prev;
   }
 }
 
@@ -167,14 +170,72 @@ void p2::Solver::collisions(World& world, float dt)
       Shape* second = &s2;
 
       if (first->type > second->type)
+      {
         std::swap(first, second);
+        std::swap(b1, b2);
+      }
 
       if (first->type == p2::ShapeType::Rectangle && second->type == p2::ShapeType::Rectangle)
       {
+        p2::Collision collision = p2::collide(world, *first, *second);
+
+        if (collision.overlap < 0.0f)
+          continue;
+
+        p2::Vec2 axis = collision.normal;
+        float overlap = collision.overlap;
+
         RectangleShape& rectA = static_cast<RectangleShape&>(*first);
         RectangleShape& rectB = static_cast<RectangleShape&>(*second);
+      
+        float wA = 0.0f;
+        float wB = 0.0f;
 
- 
+        for (int i = 0; i < 4; ++i)
+        {
+          wA += world.getParticle(rectA.points[i]).inverseMass;
+          wB += world.getParticle(rectB.points[i]).inverseMass;
+        }
+
+        float sum = wA + wB;
+
+        if (sum == 0.0f)
+          continue;
+
+        p2::Vec2 correction = collision.normal * collision.overlap;
+        float friction = std::min(b1.friction, b2.friction);
+
+        if (wA > 0.0f)
+          for (int i = 0; i < 4; ++i)
+          {
+            p2::Particle& p = world.getParticle(rectA.points[i]);
+
+            if (p.inverseMass > 0.0f)
+            {
+              p2::Vec2 velocity = p.pos - p.prevPos;
+              p2::Vec2 tangentVelocity = velocity - collision.normal * dot(velocity, collision.normal);
+              velocity -= tangentVelocity * friction;
+
+              p.pos -= (correction * (wA / sum)) * (p.inverseMass / wA);
+              p.prevPos = p.pos - velocity;
+            }
+          }
+        
+        if (wB > 0.0f)
+          for (int i = 0; i < 4; ++i)
+          {
+            p2::Particle& p = world.getParticle(rectB.points[i]);
+
+            if (p.inverseMass > 0.0f)
+            {
+              p2::Vec2 velocity = p.pos - p.prevPos;
+              p2::Vec2 tangentVelocity = velocity - collision.normal * dot(velocity, collision.normal);
+              velocity -= tangentVelocity * friction;
+
+              p.pos += (correction * (wB / sum)) * (p.inverseMass / wB);
+              p.prevPos = p.pos - velocity;
+            }
+          }
       }
 
       switch (first->type)
@@ -188,148 +249,6 @@ void p2::Solver::collisions(World& world, float dt)
           {
             case ShapeType::None:
               throw std::runtime_error("Used non-body Shape!");
-
-            case ShapeType::Rectangle:
-            {
-              RectangleShape& rectA =
-                static_cast<RectangleShape&>(*first);
-
-              RectangleShape& rectB =
-                static_cast<RectangleShape&>(*second);
-
-              std::array<Vec2, 4> a;
-              std::array<Vec2, 4> b;
-
-              bool anyInactive = false;
-
-              for (size_t i = 0; i < 4; ++i)
-              {
-                Particle& pA =
-                  world.getParticle(rectA.points[i]);
-
-                Particle& pB =
-                  world.getParticle(rectB.points[i]);
-
-                a[i] = pA.pos;
-                b[i] = pB.pos;
-
-                if (!pA.isActive || !pB.isActive)
-                {
-                  anyInactive = true;
-                  break;
-                }
-              }
-
-              if (anyInactive)
-                break;
-
-              auto sat =
-                [](const auto& a, const auto& b)
-                -> std::pair<float, Vec2>
-              {
-                float minOverlap = FLT_MAX;
-                Vec2 bestAxis;
-
-                for (const auto& polygon : {a, b})
-                {
-                  for (size_t i = 0; i < polygon.size(); ++i)
-                  {
-                    Vec2 edge =
-                      polygon[(i + 1) % polygon.size()] -
-                      polygon[i];
-
-                    if (edge.lengthSquared() == 0.0f)
-                      continue;
-
-                    Vec2 axis = edge.perpendicular().norm();
-
-                    float minA = FLT_MAX;
-                    float maxA = -FLT_MAX;
-
-                    float minB = FLT_MAX;
-                    float maxB = -FLT_MAX;
-
-                    for (const Vec2& v : a)
-                    {
-                      float p = dot(v, axis);
-
-                      minA = std::min(minA, p);
-                      maxA = std::max(maxA, p);
-                    }
-
-                    for (const Vec2& v : b)
-                    {
-                      float p = dot(v, axis);
-
-                      minB = std::min(minB, p);
-                      maxB = std::max(maxB, p);
-                    }
-
-                    if (maxA < minB || maxB < minA)
-                      return {-1.0f, {}};
-
-                    float overlap =
-                      std::min(maxA, maxB) -
-                      std::max(minA, minB);
-
-                    if (overlap < minOverlap)
-                    {
-                      minOverlap = overlap;
-                      bestAxis = axis;
-                    }
-                  }
-                }
-
-                return {minOverlap, bestAxis};
-              };
-
-              auto [overlap, axis] = sat(a, b);
-
-              if (overlap < 0.0f)
-                break;
-
-              Vec2 centerA =
-                (a[0] + a[1] + a[2] + a[3]) * 0.25f;
-
-              Vec2 centerB =
-                (b[0] + b[1] + b[2] + b[3]) * 0.25f;
-
-              if (dot(centerB - centerA, axis) < 0.0f)
-                axis = -axis;
-
-              size_t supportA = 0;
-              size_t supportB = 0;
-
-              for (size_t i = 1; i < 4; ++i)
-              {
-                if (dot(a[i], axis) > dot(a[supportA], axis))
-                  supportA = i;
-
-                if (dot(b[i], axis) > dot(b[supportB], axis))
-                  supportB = i;
-              }
-
-              Particle& pa =
-                world.getParticle(rectA.points[supportA]);
-
-              Particle& pb =
-                world.getParticle(rectB.points[supportB]);
-
-              float wA = pa.inverseMass;
-              float wB = pb.inverseMass;
-
-              float sum = wA + wB;
-
-              if (sum == 0.0f)
-                break;
-
-              Vec2 correction = axis * overlap;
-
-              pa.pos -= correction * (wA / sum);
-              pb.pos += correction * (wB / sum);
-
-              break;
-            }
 
             case ShapeType::Circle:
             {

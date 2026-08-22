@@ -7,6 +7,7 @@
 
 #include "particle2d/solver/solver.hpp"
 #include "particle2d/vector.hpp"
+#include "particle2d/world/intersects.hpp"
 
 #include <sys/types.h>
 #include <unordered_map>
@@ -38,13 +39,17 @@ namespace p2
       Shape&      getShape(ShapeID id);
       Body&       getBody(BodyID id);
 
+      p2::Collision collide(ShapeID a, ShapeID b);
+      bool intersects(ShapeID a, ShapeID b);
+
       ShapeID createRectangle(
         Vec2 center,
         Vec2 halfSize,
         AngleRad rotation,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createRectangle(
@@ -53,7 +58,8 @@ namespace p2
         AngleGrad rotation,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createRectangle(
@@ -62,7 +68,8 @@ namespace p2
         ParticleID p2,
         ParticleID p3,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCircle(
@@ -70,14 +77,16 @@ namespace p2
         float radius,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCircle(
         ParticleID center,
         float radius,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCapsule(
@@ -86,7 +95,8 @@ namespace p2
         float radius,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCapsule(
@@ -94,7 +104,8 @@ namespace p2
         ParticleID point2,
         float radius,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCapsule(
@@ -104,7 +115,8 @@ namespace p2
         float radius,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       ShapeID createCapsule(
@@ -114,15 +126,20 @@ namespace p2
         float radius,
         float inverseMass,
         uint64_t category,
-        uint64_t collides
+        uint64_t collides,
+        float friction = 0.8
       );
 
       World() = default;
 
       Vec2 gravity;
+      float airFriction = 0.99;
     private:
       friend class Solver;
       Solver solver;
+
+      void dampVelocity(Particle& prt, float amount);
+
 
       std::vector<Particle>                    particles;
       std::unordered_map<ParticleID, uint32_t> particleIDToVec;

@@ -4,6 +4,7 @@
 #include "particle2d/particle/shape.hpp"
 #include "particle2d/types.hpp"
 #include "particle2d/vector.hpp"
+#include "particle2d/world/intersects.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -38,6 +39,16 @@ void p2::World::step(float dt, uint8_t iterations)
   }
 }
 
+p2::Collision p2::World::collide(p2::ShapeID a, p2::ShapeID b)
+{
+  return p2::collide(*this, getShape(a), getShape(b));
+}
+
+bool p2::World::intersects(p2::ShapeID a, p2::ShapeID b)
+{
+  return collide(a, b).overlap >= 0.0f;
+}
+
 void p2::World::addVelocity(p2::ParticleID id, const p2::Vec2& velocity, float dt)
 {
   p2::Particle& prt = getParticle(id);
@@ -54,6 +65,15 @@ void p2::World::dampVelocity(p2::ParticleID id, float amount)
 
   prt.prevPos = prt.pos - velocity;
 }
+
+void p2::World::dampVelocity(p2::Particle& prt, float amount)
+{
+  p2::Vec2 velocity = prt.pos - prt.prevPos;
+  velocity *= amount;
+
+  prt.prevPos = prt.pos - velocity;
+}
+
 
 p2::Vec2 p2::World::rotate(p2::ParticleID id, float angle)
 {
@@ -204,7 +224,8 @@ p2::ShapeID p2::World::createRectangle(
   AngleRad rotation,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   p2::Vec2 p0{-halfSize.x, -halfSize.y};
   p2::Vec2 p1{ halfSize.x, -halfSize.y};
@@ -292,6 +313,7 @@ p2::ShapeID p2::World::createRectangle(
 
   createBody({
     shapeID,
+    friction,
     category,
     collides
   });
@@ -305,9 +327,10 @@ p2::ShapeID p2::World::createRectangle(
   AngleGrad rotation,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
-  return this->createRectangle(center, halfSize, rotation.toRad(), inverseMass, category, collides);
+  return this->createRectangle(center, halfSize, rotation.toRad(), inverseMass, category, collides, friction);
 }
 
 p2::ShapeID p2::World::createRectangle(
@@ -316,7 +339,8 @@ p2::ShapeID p2::World::createRectangle(
   p2::ParticleID p2,
   p2::ParticleID p3,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   getParticle(p0);
   getParticle(p1);
@@ -336,6 +360,7 @@ p2::ShapeID p2::World::createRectangle(
 
   createBody({
     shapeID,
+    friction,
     category,
     collides
   });
@@ -348,7 +373,8 @@ p2::ShapeID p2::World::createCircle(
   float radius,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   p2::ParticleID centerID = createParticle({
     center,
@@ -358,6 +384,7 @@ p2::ShapeID p2::World::createCircle(
   return createCircle(
     centerID,
     radius,
+    friction,
     category,
     collides
   );
@@ -367,7 +394,8 @@ p2::ShapeID p2::World::createCircle(
   p2::ParticleID center,
   float radius,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   getParticle(center);
 
@@ -380,6 +408,7 @@ p2::ShapeID p2::World::createCircle(
 
   createBody({
     shapeID,
+    friction,
     category,
     collides
   });
@@ -393,7 +422,8 @@ p2::ShapeID p2::World::createCapsule(
   float radius,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   p2::ParticleID id1 = createParticle({
     point1,
@@ -422,6 +452,7 @@ p2::ShapeID p2::World::createCapsule(
 
   createBody({
     shapeID,
+    friction,
     category,
     collides
   });
@@ -434,7 +465,8 @@ p2::ShapeID p2::World::createCapsule(
   p2::ParticleID point2,
   float radius,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   getParticle(point1);
   getParticle(point2);
@@ -449,6 +481,7 @@ p2::ShapeID p2::World::createCapsule(
 
   createBody({
     shapeID,
+    friction,
     category,
     collides
   });
@@ -463,7 +496,8 @@ p2::ShapeID p2::World::createCapsule(
   float radius,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   p2::Vec2 direction = Vec2{1.0f, 0.0f}.rotate(rotation);
 
@@ -478,7 +512,8 @@ p2::ShapeID p2::World::createCapsule(
     radius,
     inverseMass,
     category,
-    collides
+    collides,
+    friction
   );
 }
 
@@ -489,7 +524,8 @@ p2::ShapeID p2::World::createCapsule(
   float radius,
   float inverseMass,
   uint64_t category,
-  uint64_t collides)
+  uint64_t collides,
+  float friction)
 {
   return createCapsule(
     center,
@@ -500,6 +536,7 @@ p2::ShapeID p2::World::createCapsule(
     radius,
     inverseMass,
     category,
-    collides
+    collides,
+    friction
   );
 }

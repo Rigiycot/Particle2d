@@ -5,10 +5,11 @@
 #include "particle2d/world/world.hpp"
 
 #include <cfloat>
+#include <iostream>
 
 namespace 
 {
-  p2::Collision rectRect(const p2::RectangleShape& a, const p2::RectangleShape& b, p2::World world)
+  p2::Collision rectRect(p2::World& world, const p2::RectangleShape& a, const p2::RectangleShape& b)
   {
     std::array<p2::Vec2, 4> pa;
     std::array<p2::Vec2, 4> pb;
@@ -43,8 +44,8 @@ namespace
         maxA = std::max(maxA, p);
       }
 
-      float minB = dot(pa[0], axis);
-      float maxB = minA;
+      float minB = dot(pb[0], axis);
+      float maxB = minB;
 
       for (int i = 1; i < 4; ++i)
       {
@@ -54,7 +55,7 @@ namespace
         maxB = std::max(maxB, p);
       }
 
-      if (minA < minB || maxB < maxA)
+      if (maxA < minB || maxB < minA)
         return {-1.0f, {}};
 
       float overlap = std::min(maxA, maxB) - std::max(minA, minB);
@@ -116,20 +117,20 @@ namespace
   }
 }
 
-p2::Collision p2::collide(p2::World world, const p2::Shape& a, const p2::Shape& b)
+p2::Collision p2::collide(p2::World& world, const p2::Shape& a, const p2::Shape& b)
 {
   if (a.type == p2::ShapeType::Rectangle && b.type == p2::ShapeType::Rectangle)
   {
     const RectangleShape& rect1 = static_cast<const RectangleShape&>(a);
     const RectangleShape& rect2 = static_cast<const RectangleShape&>(b);
 
-    return rectRect(rect1, rect2, world);
+    return rectRect(world, rect1, rect2);
   }
 
   return {-1.0f, {}};
 }
 
-bool p2::intersects(p2::World world, const Shape& a, const Shape& b)
+bool p2::intersects(p2::World& world, const Shape& a, const Shape& b)
 {
-    return collide(world, a, b).overlap > 0.0f;
+    return collide(world, a, b).overlap >= 0.0f;
 }

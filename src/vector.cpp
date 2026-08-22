@@ -149,12 +149,12 @@ const {
 }
 
 
-float dot(const p2::Vec2& a, const p2::Vec2& b)
+float p2::dot(const p2::Vec2& a, const p2::Vec2& b)
 {
   return a.x * b.x + a.y * b.y;
 }
 
-float cross(const p2::Vec2& a, const p2::Vec2& b)
+float p2::cross(const p2::Vec2& a, const p2::Vec2& b)
 {
   return a.x * b.y - a.y * b.x;
 }

@@ -5,8 +5,9 @@ project(Particle2d)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(Particle2d 
-  src/world/world.cpp
   src/solver/solver.cpp 
+  src/world/world.cpp
+  src/world/intersects.cpp
   src/vector.cpp
 )
 

@@ -12,6 +12,7 @@ namespace p2
   {
     public:
       ShapeID shape;
+      float friction;
       uint64_t category;
       uint64_t collides;
   };
