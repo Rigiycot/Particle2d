@@ -13,6 +13,7 @@
 #include <cfloat>
 #include <algorithm>
 
+#include <iostream>
 
 void p2::Solver::integrate(World& world, float dt)
 {
@@ -46,15 +47,20 @@ void p2::Solver::integrate(World& world, float dt)
     }
 
     if (p.inverseMass == 0) continue;
-    Vec2 prev = p.pos;
+
+    std::cerr << "BEFORE: pos=" << p.pos.x << "," << p.pos.y 
+              << " prev=" << p.prevPos.x << "," << p.prevPos.y 
+              << " vel=" << (p.pos - p.prevPos).length() << "\n";
+
     Vec2 acceleration = {0.0f, 0.0f};
     if (p.useGravity)
       acceleration += world.gravity;
-      
+    
+    p2::Vec2 prev = p.pos;
     p.pos = p.pos * 2.0f - p.prevPos + acceleration * dt * dt;
-    world.dampVelocity(p, world.airFriction);
-
     p.prevPos = prev;
+
+    world.dampVelocity(p, world.airFriction);
   }
 }
 
@@ -95,6 +101,9 @@ void p2::Solver::constraints(World& world, float dt, uint16_t iterations)
 
     a.pos -= correction * (wA / sum);
     b.pos += correction * (wB / sum);
+
+    a.prevPos -= correction * (wA / sum);
+    b.prevPos += correction * (wB / sum);
   }
 
   for (AngleJoint& anglej : world.anglejoints)
@@ -124,6 +133,11 @@ void p2::Solver::constraints(World& world, float dt, uint16_t iterations)
     else
       continue;
 
+    float error = targetAngle.grad - angle.grad;
+
+    if (std::abs(error) < EPSILON)
+      continue;
+
     float delta = (targetAngle.grad - angle.grad) * k;
 
     float wA = a.inverseMass;
@@ -145,8 +159,14 @@ void p2::Solver::constraints(World& world, float dt, uint16_t iterations)
       AngleGrad{delta * factorC}
     );
 
+    p2::Vec2 oldA = a.pos;
+    p2::Vec2 oldC = c.pos;
+
     a.pos = b.pos + newAB;
     c.pos = b.pos + newBC;
+
+    a.prevPos += a.pos - oldA;
+    c.prevPos += c.pos - oldC;
   }
 }
 
@@ -191,11 +211,20 @@ void p2::Solver::collisions(World& world, float dt)
         float wA = 0.0f;
         float wB = 0.0f;
 
+        p2::Vec2 centerA;
+        p2::Vec2 centerB;
+
         for (int i = 0; i < 4; ++i)
         {
           wA += world.getParticle(rectA.points[i]).inverseMass;
           wB += world.getParticle(rectB.points[i]).inverseMass;
+
+          centerA += world.getParticle(rectA.points[i]).pos;
+          centerB += world.getParticle(rectB.points[i]).pos;
         }
+
+        centerA /= 4;
+        centerB /= 4;
 
         float sum = wA + wB;
 
@@ -205,37 +234,122 @@ void p2::Solver::collisions(World& world, float dt)
         p2::Vec2 correction = collision.normal * collision.overlap;
         float friction = std::min(b1.friction, b2.friction);
 
-        if (wA > 0.0f)
-          for (int i = 0; i < 4; ++i)
+
+        float torqueA = 0.0f;
+        float torqueB = 0.0f;
+
+        float weightA = 0.0f;
+        float weightB = 0.0f;
+
+        for (int i = 0; i < 4; ++i)
+        {
+          p2::Particle& pa = world.getParticle(rectA.points[i]);
+          p2::Particle& pb = world.getParticle(rectB.points[i]);
+
+          if (pa.inverseMass > 0.0f)
           {
-            p2::Particle& p = world.getParticle(rectA.points[i]);
+            p2::Vec2 r = pa.pos - centerA;
 
-            if (p.inverseMass > 0.0f)
-            {
-              p2::Vec2 velocity = p.pos - p.prevPos;
-              p2::Vec2 tangentVelocity = velocity - collision.normal * dot(velocity, collision.normal);
-              velocity -= tangentVelocity * friction;
-
-              p.pos -= (correction * (wA / sum)) * (p.inverseMass / wA);
-              p.prevPos = p.pos - velocity;
-            }
+            torqueA += pa.inverseMass * cross(r, -correction);
+            weightA += pa.inverseMass * r.lengthSquared();
           }
-        
-        if (wB > 0.0f)
-          for (int i = 0; i < 4; ++i)
+
+          if (pb.inverseMass > 0.0f)
           {
-            p2::Particle& p = world.getParticle(rectB.points[i]);
+            p2::Vec2 r = pb.pos - centerB;
 
-            if (p.inverseMass > 0.0f)
-            {
-              p2::Vec2 velocity = p.pos - p.prevPos;
-              p2::Vec2 tangentVelocity = velocity - collision.normal * dot(velocity, collision.normal);
-              velocity -= tangentVelocity * friction;
-
-              p.pos += (correction * (wB / sum)) * (p.inverseMass / wB);
-              p.prevPos = p.pos - velocity;
-            }
+            torqueB += pb.inverseMass * cross(r, correction);
+            weightB += pb.inverseMass * r.lengthSquared();
           }
+        }
+
+        float angleA = 0.0f;
+        float angleB = 0.0f;
+
+        float denominatorA = 0.0f;
+        float denominatorB = 0.0f;
+
+        float numeratorA = 0.0f;
+        float numeratorB = 0.0f;
+
+        for (int i = 0; i < 4; ++i)
+        {
+          p2::Particle& pa = world.getParticle(rectA.points[i]);
+          p2::Particle& pb = world.getParticle(rectB.points[i]);
+
+          if (pa.inverseMass > 0.0f)
+          {
+            p2::Vec2 r = pa.pos - centerA;
+
+            p2::Vec2 correctionA =
+              -correction * (pa.inverseMass / sum);
+
+            numeratorA += cross(r, correctionA);
+            denominatorA +=
+              pa.inverseMass * r.lengthSquared();
+          }
+
+          if (pb.inverseMass > 0.0f)
+          {
+            p2::Vec2 r = pb.pos - centerB;
+
+            p2::Vec2 correctionB =
+              correction * (pb.inverseMass / sum);
+
+            numeratorB += cross(r, correctionB);
+            denominatorB +=
+              pb.inverseMass * r.lengthSquared();
+          }
+        }
+
+        if (denominatorA > 0.0f)
+          angleA = numeratorA / denominatorA;
+
+        if (denominatorB > 0.0f)
+          angleB = numeratorB / denominatorB;
+
+
+        for (int i = 0; i < 4; ++i)
+        {
+          p2::Particle& pa = world.getParticle(rectA.points[i]);
+          p2::Particle& pb = world.getParticle(rectB.points[i]);
+
+          if (pa.inverseMass > 0.0f)
+          {
+            p2::Vec2 rPos = pa.pos - centerA;
+            p2::Vec2 rPrev = pa.prevPos - centerA;
+
+            p2::Vec2 rotatedPos =
+              centerA + rPos.rotate(AngleRad(angleA));
+
+            p2::Vec2 rotatedPrev =
+              centerA + rPrev.rotate(AngleRad(angleA));
+
+            p2::Vec2 translation =
+              -correction * (pa.inverseMass / sum);
+
+            pa.pos = rotatedPos + translation;
+            pa.prevPos = rotatedPrev + translation;
+          }
+
+          if (pb.inverseMass > 0.0f)
+          {
+            p2::Vec2 rPos = pb.pos - centerB;
+            p2::Vec2 rPrev = pb.prevPos - centerB;
+
+            p2::Vec2 rotatedPos =
+              centerB + rPos.rotate(AngleRad(angleB));
+
+            p2::Vec2 rotatedPrev =
+              centerB + rPrev.rotate(AngleRad(angleB));
+
+            p2::Vec2 translation =
+              correction * (pb.inverseMass / sum);
+
+            pb.pos = rotatedPos + translation;
+            pb.prevPos = rotatedPrev + translation;
+          }
+        }
       }
 
       switch (first->type)
