@@ -8,6 +8,7 @@ namespace p2 {
   {
     float overlap;
     Vec2 normal;
+    Vec2 point;
   };
 
   class World;

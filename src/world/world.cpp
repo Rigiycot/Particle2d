@@ -10,32 +10,14 @@
 #include <stdexcept>
 #include <vector>
 
-#include <cmath>
-
 void p2::World::step(float dt, uint8_t iterations)
 {
   solver.integrate(*this, dt);
 
-  for (p2::Particle& p : particles)
-  {
-    if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
-      throw std::runtime_error("NaN after integrate");
-  }
-
   for (uint8_t i = 0; i < iterations; ++i)
   {
-    solver.constraints(*this, dt, iterations);
-    for (p2::Particle& p : particles)
-    {
-      if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
-        throw std::runtime_error("NaN after constraints");
-    }
     solver.collisions(*this, dt);
-    for (p2::Particle& p : particles)
-    {
-      if (!std::isfinite(p.pos.x) || !std::isfinite(p.pos.y))
-        throw std::runtime_error("NaN after collisions");
-    }
+    solver.constraints(*this, dt, iterations);
   }
 }
 
@@ -272,34 +254,20 @@ p2::ShapeID p2::World::createRectangle(
     1.0f
   });
 
-  createAngleJoint({
-    id0, id1, id2,
-    AngleGrad{90.0f},
-    AngleGrad{90.0f},
+  createJoint({
+    id0,
+    id2,
+    (p2 - p0).length(),
     1.0f
   });
 
-  createAngleJoint({
-    id1, id2, id3,
-    AngleGrad{90.0f},
-    AngleGrad{90.0f},
+  createJoint({
+    id1,
+    id3,
+    (p3 - p1).length(),
     1.0f
   });
-
-  createAngleJoint({
-    id2, id3, id0,
-    AngleGrad{90.0f},
-    AngleGrad{90.0f},
-    1.0f
-  });
-
-  createAngleJoint({
-    id3, id0, id1,
-    AngleGrad{90.0f},
-    AngleGrad{90.0f},
-    1.0f
-  });
-
+  
   auto shape = std::make_unique<RectangleShape>();
 
   shape->points = {

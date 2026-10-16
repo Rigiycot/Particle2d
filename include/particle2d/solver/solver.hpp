@@ -12,5 +12,8 @@ namespace p2
       void integrate(World& world, float dt);
       void constraints(World& world, float dt, uint16_t iterations);
       void collisions(World& world, float dt);
+
+    private:
+      static constexpr float EPSILON = 0.005f;
   };
 }
